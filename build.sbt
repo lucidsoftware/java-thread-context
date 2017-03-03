@@ -1,7 +1,5 @@
 lazy val `thread-context` = project
 
-lazy val `thread-context-global` = project.dependsOn(`thread-context`)
-
 lazy val `thread-context-slf4j` = project.dependsOn(`thread-context`)
 
 inScope(Global)(Seq(

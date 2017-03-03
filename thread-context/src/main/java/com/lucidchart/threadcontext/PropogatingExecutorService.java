@@ -10,14 +10,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class PropogatingExecutorService<T> implements ExecutorService {
+public final class PropogatingExecutorService implements ExecutorService {
 
-    private final ContextManager<T> manager;
     private final ExecutorService delegate;
 
-    public PropogatingExecutorService(ExecutorService delegate, ContextManager<T> manager) {
+    public PropogatingExecutorService(ExecutorService delegate) {
         this.delegate = delegate;
-        this.manager = manager;
     }
 
     public final void shutdown() {
@@ -40,52 +38,44 @@ public final class PropogatingExecutorService<T> implements ExecutorService {
         return delegate.awaitTermination(l, timeUnit);
     }
 
-    public final <T2> Future<T2> submit(Callable<T2> callable) {
-        final T context = manager.getCurrent();
-        return delegate.submit(() -> manager.call(context, callable));
+    public final <T> Future<T> submit(Callable<T> callable) {
+        return delegate.submit(ContextManager.callable(callable));
     }
 
-    public final <T2> Future<T2> submit(Runnable runnable, T2 t) {
-        final T context = manager.getCurrent();
-        return delegate.submit(() -> manager.run(context, runnable), t);
+    public final <T> Future<T> submit(Runnable runnable, T t) {
+        return delegate.submit(ContextManager.runnable(runnable), t);
     }
 
     public final Future<?> submit(Runnable runnable) {
-        final T context = manager.getCurrent();
-        return delegate.submit(() -> manager.run(context, runnable));
+        return delegate.submit(ContextManager.runnable(runnable));
     }
 
-    public <T2> List<Future<T2>> invokeAll(Collection<? extends Callable<T2>> collection) throws InterruptedException {
-        final T context = manager.getCurrent();
-        final ArrayList<Callable<T2>> propogatingCollection = new ArrayList<>(collection);
-        propogatingCollection.replaceAll(callable -> () -> manager.call(context, callable));
-        return delegate.invokeAll(propogatingCollection);
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection) throws InterruptedException {
+        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
+        propagatingCollection.replaceAll(ContextManager::callable);
+        return delegate.invokeAll(propagatingCollection);
     }
 
-    public <T2> List<Future<T2>> invokeAll(Collection<? extends Callable<T2>> collection, long l, TimeUnit timeUnit) throws InterruptedException {
-        final T context = manager.getCurrent();
-        final ArrayList<Callable<T2>> propogatingCollection = new ArrayList<>(collection);
-        propogatingCollection.replaceAll(callable -> () -> manager.call(context, callable));
-        return delegate.invokeAll(propogatingCollection, l, timeUnit);
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException {
+        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
+        propagatingCollection.replaceAll(ContextManager::callable);
+        return delegate.invokeAll(propagatingCollection, l, timeUnit);
     }
 
-    public <T2> T2 invokeAny(Collection<? extends Callable<T2>> collection) throws InterruptedException, ExecutionException {
-        final T context = manager.getCurrent();
-        final ArrayList<Callable<T2>> propogatingCollection = new ArrayList<>(collection);
-        propogatingCollection.replaceAll(callable -> () -> manager.call(context, callable));
-        return delegate.invokeAny(propogatingCollection);
+    public <T> T invokeAny(Collection<? extends Callable<T>> collection) throws InterruptedException, ExecutionException {
+        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
+        propagatingCollection.replaceAll(ContextManager::callable);
+        return delegate.invokeAny(propagatingCollection);
     }
 
-    public <T2> T2 invokeAny(Collection<? extends Callable<T2>> collection, long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-        final T context = manager.getCurrent();
-        final ArrayList<Callable<T2>> propogatingCollection = new ArrayList<>(collection);
-        propogatingCollection.replaceAll(callable -> () -> manager.call(context, callable));
-        return delegate.invokeAny(propogatingCollection);
+    public <T> T invokeAny(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
+        propagatingCollection.replaceAll(ContextManager::callable);
+        return delegate.invokeAny(propagatingCollection);
     }
 
     public void execute(Runnable runnable) {
-        final T context = manager.getCurrent();
-        delegate.execute(() -> manager.run(context, runnable));
+        delegate.execute(ContextManager.runnable(runnable));
     }
 
 }
