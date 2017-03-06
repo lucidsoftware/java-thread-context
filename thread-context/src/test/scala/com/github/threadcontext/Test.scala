@@ -1,6 +1,6 @@
-package com.lucidchart.threadcontext
+package com.github.threadcontext
 
-import java.util.concurrent.{Callable, Executors, TimeUnit}
+import java.util.concurrent._
 import org.specs2.mutable.Specification
 
 class Test extends Specification {
@@ -11,21 +11,16 @@ class Test extends Specification {
     "propogate" in {
       val value = new ThreadLocal[String]
       val saver = new ThreadLocalSaver(value)
-      ContextManager.savers.add(saver)
+      ThreadContext.savers.add(saver)
       try {
-        val executor = new PropogatingExecutorService(Executors.newFixedThreadPool(8))
+        val executor = new PropagatingExecutorService(Executors.newFixedThreadPool(8))
         try {
-          val condition = new AnyRef
-          @volatile var notified = false
+          val condition = new Semaphore(0)
 
           value.set("example1")
           val example1 = executor.submit(new Callable[String] {
             def call() = {
-              condition.synchronized {
-                while (!notified) {
-                  condition.wait()
-                }
-              }
+              condition.acquire()
               value.get()
             }
           })
@@ -33,8 +28,7 @@ class Test extends Specification {
           val example2 = executor.submit(new Callable[String] {
             def call() = {
               val v = value.get()
-              notified = true
-              condition.synchronized { condition.notify() }
+              condition.release()
               v
             }
           })
@@ -42,11 +36,11 @@ class Test extends Specification {
           example1.get must_== "example1"
           example2.get must_== "example2"
         } finally {
-          executor.shutdownNow()
+          executor.shutdown()
           executor.awaitTermination(1, TimeUnit.MINUTES)
         }
       } finally {
-        ContextManager.savers.remove(saver)
+        ThreadContext.savers.remove(saver)
       }
     }
   }

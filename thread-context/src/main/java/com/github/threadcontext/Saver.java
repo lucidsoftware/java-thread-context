@@ -1,4 +1,4 @@
-package com.lucidchart.threadcontext;
+package com.github.threadcontext;
 
 public interface Saver {
 

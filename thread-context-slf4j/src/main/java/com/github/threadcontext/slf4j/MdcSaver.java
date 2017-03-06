@@ -1,6 +1,6 @@
-package com.lucidchart.threadcontext.slf4j;
+package com.github.threadcontext.slf4j;
 
-import com.lucidchart.threadcontext.Saver;
+import com.github.threadcontext.Saver;
 import java.util.Map;
 import org.slf4j.MDC;
 

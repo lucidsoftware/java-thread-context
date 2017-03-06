@@ -1,13 +1,13 @@
-package com.lucidchart.threadcontext;
+package com.github.threadcontext;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-public class ContextManager {
+public final class ThreadContext {
 
-    private ContextManager() {
+    private ThreadContext() {
     }
 
     public static final Collection<Saver> savers = new ArrayList<>();
