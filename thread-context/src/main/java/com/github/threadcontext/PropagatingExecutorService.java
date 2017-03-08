@@ -9,13 +9,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
-public final class PropagatingExecutorService implements ExecutorService {
+public class PropagatingExecutorService implements ExecutorService {
 
     private final ExecutorService delegate;
+    private final Supplier<Context> contextSupplier;
 
-    public PropagatingExecutorService(ExecutorService delegate) {
+    public PropagatingExecutorService(ExecutorService delegate, Supplier<Context> contextSupplier) {
         this.delegate = delegate;
+        this.contextSupplier = contextSupplier;
     }
 
     public final void shutdown() {
@@ -38,44 +41,55 @@ public final class PropagatingExecutorService implements ExecutorService {
         return delegate.awaitTermination(l, timeUnit);
     }
 
-    public final <T> Future<T> submit(Callable<T> callable) {
-        return delegate.submit(ThreadContext.callable(callable));
+    private <T> Callable<T> callable(Callable<T> callable) {
+        Context context = contextSupplier.get();
+        return () -> context.call(callable);
     }
 
-    public final <T> Future<T> submit(Runnable runnable, T t) {
-        return delegate.submit(ThreadContext.runnable(runnable), t);
+    private Runnable runnable(Runnable runnable) {
+        Context context = contextSupplier.get();
+        return () -> context.run(runnable);
     }
 
-    public final Future<?> submit(Runnable runnable) {
-        return delegate.submit(ThreadContext.runnable(runnable));
+    private <T> Collection<Callable<T>> callables(Collection<? extends Callable<T>> callables) {
+        Context context = contextSupplier.get();
+        Collection<Callable<T>> result = new ArrayList<>(callables.size());
+        for (Callable<T> callable : callables) {
+            result.add(() -> context.call(callable));
+        }
+        return result;
+    }
+
+    public <T> Future<T> submit(Callable<T> callable) {
+        return delegate.submit(callable(callable));
+    }
+
+    public <T> Future<T> submit(Runnable runnable, T t) {
+        return delegate.submit(runnable(runnable), t);
+    }
+
+    public Future<?> submit(Runnable runnable) {
+        return delegate.submit(runnable(runnable));
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection) throws InterruptedException {
-        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
-        propagatingCollection.replaceAll(ThreadContext::callable);
-        return delegate.invokeAll(propagatingCollection);
+        return delegate.invokeAll(callables(collection));
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException {
-        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
-        propagatingCollection.replaceAll(ThreadContext::callable);
-        return delegate.invokeAll(propagatingCollection, l, timeUnit);
+        return delegate.invokeAll(callables(collection), l, timeUnit);
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> collection) throws InterruptedException, ExecutionException {
-        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
-        propagatingCollection.replaceAll(ThreadContext::callable);
-        return delegate.invokeAny(propagatingCollection);
+        return delegate.invokeAny(callables(collection));
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-        final List<Callable<T>> propagatingCollection = new ArrayList<>(collection);
-        propagatingCollection.replaceAll(ThreadContext::callable);
-        return delegate.invokeAny(propagatingCollection);
+        return delegate.invokeAny(callables(collection));
     }
 
     public void execute(Runnable runnable) {
-        delegate.execute(ThreadContext.runnable(runnable));
+        delegate.execute(runnable(runnable));
     }
 
 }

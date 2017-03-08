@@ -10,37 +10,32 @@ class Test extends Specification {
 
     "propogate" in {
       val value = new ThreadLocal[String]
-      val saver = new ThreadLocalSaver(value)
-      ThreadContext.savers.add(saver)
+      val supplier = new ThreadLocalContextSupplier(value)
+      val executor = new PropagatingExecutorService(Executors.newFixedThreadPool(2), supplier)
       try {
-        val executor = new PropagatingExecutorService(Executors.newFixedThreadPool(8))
-        try {
-          val condition = new Semaphore(0)
+        val condition = new Semaphore(0)
 
-          value.set("example1")
-          val example1 = executor.submit(new Callable[String] {
-            def call() = {
-              condition.acquire()
-              value.get()
-            }
-          })
-          value.set("example2")
-          val example2 = executor.submit(new Callable[String] {
-            def call() = {
-              val v = value.get()
-              condition.release()
-              v
-            }
-          })
+        value.set("example1")
+        val example1 = executor.submit(new Callable[String] {
+          def call() = {
+            condition.acquire()
+            value.get()
+          }
+        })
+        value.set("example2")
+        val example2 = executor.submit(new Callable[String] {
+          def call() = {
+            val v = value.get()
+            condition.release()
+            v
+          }
+        })
 
-          example1.get must_== "example1"
-          example2.get must_== "example2"
-        } finally {
-          executor.shutdown()
-          executor.awaitTermination(1, TimeUnit.MINUTES)
-        }
+        example1.get must_== "example1"
+        example2.get must_== "example2"
       } finally {
-        ThreadContext.savers.remove(saver)
+        executor.shutdown()
+        executor.awaitTermination(1, TimeUnit.MINUTES)
       }
     }
   }
