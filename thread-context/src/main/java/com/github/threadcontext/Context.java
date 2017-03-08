@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 public interface Context {
 
-    Supplier<Context> DEFAULT = new MutableContextSupplier();
+    MutableContextSupplier DEFAULT = new MutableContextSupplier();
 
     void run(Runnable runnable);
 
