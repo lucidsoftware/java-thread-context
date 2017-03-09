@@ -30,7 +30,7 @@ public class JoinedContext implements Context {
     }
 
     public <R, E1 extends Throwable> R supplyException1(SupplierException1<R, E1> supplier) throws E1 {
-        return context1.supplyException1(() -> context2.supplyException1(supplier));
+        return context1.<R, E1>supplyException1(() -> context2.supplyException1(supplier));
     }
 
     public <R, E1 extends Throwable, E2 extends Throwable> R supplyException2(SupplierException2<R, E1, E2> supplier) throws E1, E2 {
