@@ -1,6 +1,6 @@
 # Propagate thread local stuff
 
-[![Build Status](https://travis-ci.org/lucidsoftware/java-thread-context.svg?branch=master)](https://travis-ci.org/lucidsoftware/java-thread-context)
+[![Build Status](https://travis-ci.com/lucidsoftware/java-thread-context.svg?branch=master)](https://travis-ci.com/lucidsoftware/java-thread-context)
 ![Maven Version](https://img.shields.io/maven-central/v/com.lucidchart/thread-context.svg)
 
 This project provides a common mechanism for propagating thread-local data across system thread boundaries. This is
