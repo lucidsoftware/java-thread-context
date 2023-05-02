@@ -17,7 +17,6 @@ inScope(Global)(Seq(
   organization := "com.lucidchart",
   organizationHomepage := Some(url("https://github.com/lucidsoftware")),
   organizationName := "Lucid Software",
-  PgpKeys.pgpPassphrase := Some(Array.emptyCharArray),
   resolvers += Resolver.typesafeRepo("releases"),
   scmInfo := Some(ScmInfo(
     url("https://github.com/lucidsoftware/java-thread-context"),
@@ -26,3 +25,5 @@ inScope(Global)(Seq(
   startYear := Some(2017),
   version := sys.props.getOrElse("build.version", "0-SNAPSHOT")
 ))
+
+publish / skip := true
